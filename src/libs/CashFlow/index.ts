@@ -1,76 +1,35 @@
-//estructuracion de un objeto 
-
+import { getConnection } from "@models/sqlite/SqliteConn";
+import { CashFlowDao } from "@models/sqlite/CashFlowDao";
 export interface ICashFlow {
-    type: 'INCOME' | 'EXPENSE';
-    date: Date; 
-    amount: number; 
-    description: String;
-}
-
+  type: 'INCOME' | 'EXPENSE';
+  date: Date;
+  amount: number;
+  description: string;
+};
 export class CashFlow {
+  private dao: CashFlowDao;
+  public constructor(){
+    getConnection()
+      .then(conn=>{
+        this.dao = new CashFlowDao(conn);
+      })
+      .catch(ex=>console.error(ex));
+  }
+  // Consultas
+  public getAllCashFlow() {
+    return this.dao.getClashFlows()
+  }
+  public getCashFlowByIndex( index:number) {
+      return this.dao.getClashFlowById({_id:index});
+  }
 
-    //colleccion de CashFlows de los items
-    //lo inicializamos en un arreglo vacio porque pueda que 
-    //no tenga elementos
-
-    private cashFlowItems: ICashFlow[] = [];
-
-    public getAllCashFlow (): ICashFlow[] {
-        return this.cashFlowItems; // select * from cashflow; 
-    }
-
-    public getCashFlowByIndex( index:number): ICashFlow {
-        if (index >= 0 && index < this.cashFlowItems.length) {
-          return this.cashFlowItems[index];
-        }
-        throw Error('Index out of range');
-      } 
-      
-    public addCashFlow (cashFlow: ICashFlow): number {
-
-        //verificamos si ya existe el objeto 
-        const cashFlowExists= this.cashFlowItems.findIndex((object) => {
-
-            return object.amount === cashFlow.amount && object.description === cashFlow.description
-        })
-
-        //si no existe, añadirlo al arreglo 
-        if(cashFlowExists < 0) {
-            this.cashFlowItems.push(cashFlow)
-
-            //el primer elemento tiene que ser 0 
-            //en si, agrega una, pero todo primer elemento
-            // de un arreglo es 0, por eso le decimos -1
-
-            return this.cashFlowItems.length -1
-        }
-
-        throw Error('Cashflow Exists on Collection')
-    }
-
-    public updateCashFlow(index:number, cashFlow:ICashFlow) : boolean {
-       //actauliza un cashflow con los datos que enviamos
-        if(index >=0 && index < this.cashFlowItems.length) {
-            this.cashFlowItems[index] = cashFlow; 
-            return true;
-        }
-
-        return false;
-    }
-
-    public deleteCashFlow (index:number) : boolean {
-        if(index >=0 && index < this.cashFlowItems.length) {
-            //filtar el array de cashflow items solo por los valores que 
-            //sean diferentes al index que enviamos
-            this.cashFlowItems= this.cashFlowItems.filter(
-                (_obj: ICashFlow, i: Number) => i !== index
-            );
-
-            return true;
-        }
-
-        return false;
-    }
-
-    
+  public addCashFlow( cashFlow:ICashFlow) {
+    return this.dao.insertNewCashFlow(cashFlow);
+  }
+  public updateCashFlow( index:number, cashFlow:ICashFlow){
+   return this.dao.update({_id:index}, cashFlow);
+  }
+  public deleteCashFlow( index:number) {
+    return this.dao.deleteCashFlow({_id:index});
+  }
 }
